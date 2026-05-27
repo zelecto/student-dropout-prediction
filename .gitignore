@@ -1,0 +1,33 @@
+# Entorno virtual
+env/
+.venv/
+venv/
+
+# Datos
+data/raw/*.csv
+data/raw/*.xlsx
+data/processed/*.csv
+
+# Modelos entrenados
+models/*.pkl
+models/*.joblib
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+
+# IDE / OS
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Zone Identifier (Windows WSL)
+*:Zone.Identifier
