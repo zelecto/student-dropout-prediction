@@ -10,6 +10,7 @@
 - `python main.py` — runs ETL only, outputs `data/processed/dataset_final_ia.csv`
 - `python main.py --train` — ETL + train model, saves `models/modelo_rf.pkl`
 - `python main.py --train --no-optimize` — skip RandomizedSearchCV hyperparameter tuning
+- `uvicorn api.main:create_app --factory --reload --host 0.0.0.0 --port 8000` — start FastAPI server
 
 All commands must run from repo root. Paths resolve relative to `src/config.py` or `src/etl.py` (both use `__file__`-relative `ROOT`).
 
@@ -29,8 +30,10 @@ src/etl.py       → Load, clean, merge both datasets
 src/train.py     → Random Forest pipeline (OrdinalEncoder + SimpleImputer + RF)
 src/predict.py   → Load model dict `{"modelo": ..., "threshold": ...}` and predict
 src/config.py    → Shared paths, column lists, model params, grid
-src/schemas.py   → Pydantic models (fastapi stubs)
-api/routes.py    → FastAPI stub (not implemented yet)
+src/schemas.py   → Pydantic models (StudentFeatures, PredictionResult, API schemas)
+api/main.py      → FastAPI app factory + model loading on startup
+api/dependencies.py → Dependency injection (get_model)
+api/routes/      → health.py, prediction.py (4 endpoints)
 ```
 
 Key detail: the trained model file is a `joblib` dict, not a raw pipeline object — `load_model()` in `predict.py` handles both cases.

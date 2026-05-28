@@ -1,10 +1,13 @@
+from datetime import datetime
 from pydantic import BaseModel, Field
+
+from src.config import FEATURE_COLS
 
 
 class StudentFeatures(BaseModel):
-    edad: int = Field(ge=15, le=99, description="Edad del estudiante")
+    edad: int = Field(ge=0, description="Edad del estudiante")
     sexo: str = Field(description="Sexo (M/F)")
-    promedio_general: float = Field(ge=0, le=20)
+    promedio_general: float = Field(ge=0)
     materias_repetidas: str = Field(description="Ha repetido materias (Sí/No)")
     horas_tutoria: float = Field(ge=0)
     trabaja: str = Field(description="Trabaja mientras estudia (Sí/No)")
@@ -24,3 +27,28 @@ class PredictionResult(BaseModel):
     riesgo: int = Field(description="1 = Riesgo de abandono, 0 = Continúa")
     probabilidad_riesgo: float = Field(ge=0, le=1)
     nivel_riesgo: str = Field(description="Bajo / Medio / Alto")
+
+
+class PredictionResponse(PredictionResult):
+    timestamp: datetime
+
+
+class BatchPredictionRequest(BaseModel):
+    students: list[StudentFeatures]
+
+
+class BatchPredictionResponse(BaseModel):
+    predictions: list[PredictionResponse]
+    total: int
+
+
+class ModelInfo(BaseModel):
+    features: list[str]
+    threshold: float
+    loaded_at: datetime | None
+
+
+class HealthResponse(BaseModel):
+    status: str
+    model_loaded: bool
+    model_info: ModelInfo | None = None
