@@ -12,12 +12,17 @@ student-dropout-prediction/
 ├── models/                # Modelos entrenados (.pkl)
 ├── src/
 │   ├── config.py          # Configuración centralizada (rutas, columnas, hiperparámetros)
+│   ├── database.py        # SQLite: conexión, tablas, CRUD
 │   ├── etl.py             # Pipeline ETL: carga, limpieza y unificación
 │   ├── train.py           # Entrenamiento del modelo (Random Forest)
 │   ├── predict.py         # Inferencia con modelo entrenado
 │   └── schemas.py         # Schemas Pydantic (prepara API)
-├── api/                   # Futura implementación FastAPI
-│   └── routes.py          # Rutas stub para FastAPI
+├── api/
+│   ├── main.py            # FastAPI app factory
+│   └── routes/
+│       ├── health.py      # GET /health
+│       ├── prediction.py  # POST /predict
+│       └── dashboard.py  # GET /dashboard
 ├── notebooks/             # Exploración y análisis (Jupyter)
 ├── main.py                # Punto de entrada CLI
 ├── requirements.txt
@@ -67,23 +72,39 @@ resultados = predecir_estudiante(modelo, datos)
 2. **Train** → `models/modelo_rf.pkl` + métricas de evaluación
 3. **Predict** → Carga el modelo y genera predicciones con probabilidad y nivel de riesgo
 
+## Base de datos
+
+- `data/dropout.db` — SQLite con tablas `estudiantes` y `predicciones`
+- Se inicializa automáticamente al hacer predicciones
+
+### Poblar datos mock (dashboard)
+
+```bash
+python scripts/seed_db.py
+```
+
+Genera 1250 estudiantes mock con distribución realista:
+- 54% hombres, 46% mujeres
+- Tasa deserción ~30%
+- Riesgo alto ~380
+
 ## Variables del modelo
 
 | Variable | Descripción |
 |---|---|
 | `edad` | Edad del estudiante |
-| `sexo` | Sexo |
+| `sexo` | Sexo (M/F) |
 | `promedio_general` | Promedio académico |
-| `materias_repetidas` | Si ha repetido materias |
+| `materias_repetidas` | Si ha repetido materias (Sí/No) |
 | `horas_tutoria` | Horas de tutoría al mes |
-| `trabaja` | Si trabaja mientras estudia |
+| `trabaja` | Si trabaja mientras estudia (Sí/No) |
 | `ingreso_mensual` | Ingreso mensual familiar |
 | `apoyo_familiar` | Nivel de apoyo familiar |
 | `responsabilidades_familiares` | Responsabilidades en el hogar |
-| `becado` | Si tiene beca |
-| `matricula_al_dia` | Si la matrícula está al día |
-| `deudor` | Si tiene deudas |
-| `desplazado` | Si es estudiante desplazado |
+| `becado` | Si tiene beca (Sí/No) |
+| `matricula_al_dia` | Si la matrícula está al día (Sí/No) |
+| `deudor` | Si tiene deudas (Sí/No) |
+| `desplazado` | Si es estudiante desplazado (Sí/No) |
 | `tipo_vivienda` | Tipo de vivienda |
 | `ratio_aprobacion_sem1` | Ratio aprobación semestre 1 |
 | `ratio_aprobacion_sem2` | Ratio aprobación semestre 2 |

@@ -12,6 +12,10 @@
 - `python main.py --train --no-optimize` — skip RandomizedSearchCV hyperparameter tuning
 - `uvicorn api.main:create_app --factory --reload --host 0.0.0.0 --port 8000` — start FastAPI server
 
+## Dashboard seeder
+
+- `python scripts/seed_db.py` — genera 1250 estudiantes mock para el dashboard (solo cuando se necesite)
+
 All commands must run from repo root. Paths resolve relative to `src/config.py` or `src/etl.py` (both use `__file__`-relative `ROOT`).
 
 ## Data requirements (ETL will fail without these)
@@ -29,14 +33,21 @@ main.py          → CLI orchestration (ETL always runs first)
 src/etl.py       → Load, clean, merge both datasets
 src/train.py     → Random Forest pipeline (OrdinalEncoder + SimpleImputer + RF)
 src/predict.py   → Load model dict `{"modelo": ..., "threshold": ...}` and predict
+src/database.py  → SQLite connection, CRUD, dashboard indicators
 src/config.py    → Shared paths, column lists, model params, grid
-src/schemas.py   → Pydantic models (StudentFeatures, PredictionResult, API schemas)
+src/schemas.py   → Pydantic models (StudentFeatures, PredictionResult, DashboardResponse)
 api/main.py      → FastAPI app factory + model loading on startup
 api/dependencies.py → Dependency injection (get_model)
-api/routes/      → health.py, prediction.py (4 endpoints)
+api/routes/      → health.py, prediction.py, dashboard.py
 ```
 
 Key detail: the trained model file is a `joblib` dict, not a raw pipeline object — `load_model()` in `predict.py` handles both cases.
+
+## Database
+
+- SQLite at `data/dropout.db` with tables `estudiantes` and `predicciones`
+- Tables auto-create on first prediction
+- Run `python scripts/seed_db.py` to populate mock dashboard data (1250 students)
 
 ## Conventions
 

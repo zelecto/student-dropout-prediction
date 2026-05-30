@@ -8,6 +8,7 @@ class StudentFeatures(BaseModel):
     edad: int = Field(ge=0, description="Edad del estudiante")
     sexo: str = Field(description="Sexo (M/F)")
     promedio_general: float = Field(ge=0)
+    promedio_admision: float | None = Field(default=None, description="Promedio de admisión")
     materias_repetidas: str = Field(description="Ha repetido materias (Sí/No)")
     horas_tutoria: float = Field(ge=0)
     trabaja: str = Field(description="Trabaja mientras estudia (Sí/No)")
@@ -54,3 +55,19 @@ class HealthResponse(BaseModel):
     status: str
     model_loaded: bool
     model_info: ModelInfo | None = None
+
+
+class GeneroStats(BaseModel):
+    total: int
+    porcentaje: float
+    tasa_desercion: float
+
+
+class DashboardResponse(BaseModel):
+    total_estudiantes: int
+    tasa_desercion: float
+    riesgo_alto: int
+    promedio_riesgo: float
+    por_genero: dict[str, GeneroStats]
+    distribucion_riesgo: dict[str, int]
+    actualizado_el: datetime

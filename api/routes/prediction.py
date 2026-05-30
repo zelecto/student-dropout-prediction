@@ -5,6 +5,7 @@ import pandas as pd
 
 from api.dependencies import get_model
 from src.config import FEATURE_COLS
+from src.database import crear_estudiante, guardar_prediccion, init_db
 from src.schemas import (
     StudentFeatures,
     PredictionResponse,
@@ -24,14 +25,22 @@ async def predict_single(
 ):
     modelo, threshold = model_data
 
-    df = pd.DataFrame([student.model_dump()])
+    init_db()
+
+    data = student.model_dump()
+    estudiante_id = crear_estudiante(data)
+
+    df = pd.DataFrame([data])
     proba = modelo.predict_proba(df[FEATURE_COLS])[:, 1][0]
     pred = int(proba >= threshold)
+    nivel = clasificar_riesgo(proba)
+
+    guardar_prediccion(estudiante_id, proba, nivel, pred)
 
     return PredictionResponse(
         riesgo=pred,
         probabilidad_riesgo=round(proba, 4),
-        nivel_riesgo=clasificar_riesgo(proba),
+        nivel_riesgo=nivel,
         timestamp=datetime.now(UTC),
     )
 
@@ -43,15 +52,25 @@ async def predict_batch(
 ):
     modelo, threshold = model_data
 
+    init_db()
+
     df = pd.DataFrame([s.model_dump() for s in batch.students])
     probas = modelo.predict_proba(df[FEATURE_COLS])[:, 1]
 
     predictions = []
-    for proba in probas:
+    for i, proba in enumerate(probas):
+        data = batch.students[i].model_dump()
+        estudiante_id = crear_estudiante(data)
+
+        pred = int(proba >= threshold)
+        nivel = clasificar_riesgo(proba)
+
+        guardar_prediccion(estudiante_id, proba, nivel, pred)
+
         predictions.append(PredictionResponse(
-            riesgo=int(proba >= threshold),
+            riesgo=pred,
             probabilidad_riesgo=round(proba, 4),
-            nivel_riesgo=clasificar_riesgo(proba),
+            nivel_riesgo=nivel,
             timestamp=datetime.now(UTC),
         ))
 
