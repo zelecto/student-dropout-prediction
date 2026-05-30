@@ -5,9 +5,14 @@ from src.config import FEATURE_COLS
 
 
 class LoginRequest(BaseModel):
-    correo: str = Field(description="Correo electrónico del estudiante")
-    contraseña: str = Field(description="Contraseña del estudiante")
+  correo: str = Field(description="Correo electrónico del estudiante")
+  contraseña: str = Field(description="Contraseña del estudiante")
 
+class Admon (BaseModel):
+    correo: str = Field(description="Correo electrónico del administrador")
+    contraseña: str = Field(description="Contraseña del administrador")
+    Nombre: str = Field(description="Nombre del administrador")
+    Apellido: str = Field(description="Apellido del administrador")
 
 class StudentFeatures(BaseModel):
     edad: int = Field(ge=0, description="Edad del estudiante")
