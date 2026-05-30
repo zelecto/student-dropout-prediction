@@ -5,6 +5,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from api.routes import health_router, prediction_router
+from api.routes.StudentFeatures import router as student_router
 from src.predict import load_model
 
 
@@ -41,5 +42,5 @@ def create_app() -> FastAPI:
 
     app.include_router(health_router)
     app.include_router(prediction_router)
-
+    app.include_router(student_router)
     return app

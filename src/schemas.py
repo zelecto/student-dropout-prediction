@@ -21,6 +21,8 @@ class StudentFeatures(BaseModel):
     tipo_vivienda: str = Field(description="Tipo de vivienda")
     ratio_aprobacion_sem1: float = Field(ge=0, le=1)
     ratio_aprobacion_sem2: float = Field(ge=0, le=1)
+    correo:str = Field(description="Correo electrónico del estudiante")
+    contraseña:str = Field(description="Contraseña del estudiante")
 
 
 class PredictionResult(BaseModel):
