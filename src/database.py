@@ -13,13 +13,37 @@ def get_connection() -> sqlite3.Connection:
     return conn
 
 
+def migrate_add_student_fields():
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("PRAGMA table_info(estudiantes)")
+    existing = {row[1] for row in cursor.fetchall()}
+
+    for col in ["correo", "nombres", "apellidos"]:
+        if col not in existing:
+            try:
+                cursor.execute(f"ALTER TABLE estudiantes ADD COLUMN {col} TEXT")
+                print(f"  ✓ Migración: columna '{col}' agregada")
+            except Exception:
+                pass
+
+    conn.commit()
+    conn.close()
+
+
 def init_db():
     conn = get_connection()
     cursor = conn.cursor()
 
+    migrate_add_student_fields()
+
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS estudiantes (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
+            correo TEXT UNIQUE,
+            nombres TEXT NOT NULL,
+            apellidos TEXT NOT NULL,
             sexo TEXT NOT NULL,
             edad INTEGER NOT NULL,
             promedio_general REAL NOT NULL,
@@ -56,19 +80,112 @@ def init_db():
     conn.close()
 
 
+def buscar_estudiante_por_correo(correo: str) -> dict | None:
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM estudiantes WHERE correo = ?", (correo,))
+    row = cursor.fetchone()
+    conn.close()
+    return dict(row) if row else None
+
+
+def crear_estudiante_completo(data: dict) -> int:
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        INSERT INTO estudiantes (
+            correo, nombres, apellidos, sexo, edad, promedio_general, promedio_admision,
+            horas_tutoria, ingreso_mensual, materias_repetidas,
+            ratio_aprobacion_sem1, ratio_aprobacion_sem2,
+            trabaja, apoyo_familiar, responsabilidades_familiares,
+            becado, matricula_al_dia, deudor, desplazado, tipo_vivienda
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    """, (
+        data["correo"], data["nombres"], data["apellidos"],
+        data["sexo"], data["edad"], data["promedio_general"],
+        data.get("promedio_admision", 7.0), data["horas_tutoria"],
+        data["ingreso_mensual"], data["materias_repetidas"],
+        data["ratio_aprobacion_sem1"], data["ratio_aprobacion_sem2"],
+        data["trabaja"], data["apoyo_familiar"], data["responsabilidades_familiares"],
+        data["becado"], data["matricula_al_dia"], data["deudor"],
+        data["desplazado"], data["tipo_vivienda"]
+    ))
+
+    estudiante_id = cursor.lastrowid
+    conn.commit()
+    conn.close()
+    return estudiante_id
+
+
+def get_estudiantes_con_predicciones(pagina: int = 1, por_pagina: int = 20) -> tuple[list[dict], int]:
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT COUNT(*) as total FROM estudiantes")
+    total = cursor.fetchone()["total"]
+
+    offset = (pagina - 1) * por_pagina
+
+    cursor.execute("""
+        SELECT 
+            e.id, e.correo, e.nombres, e.apellidos, e.sexo, e.edad, e.fecha_registro,
+            p.id as prediccion_id, p.probabilidad_riesgo, p.nivel_riesgo, 
+            p.desertó, p.fecha_prediccion
+        FROM estudiantes e
+        LEFT JOIN (
+            SELECT estudiante_id, id, probabilidad_riesgo, nivel_riesgo, desertó, fecha_prediccion,
+                   ROW_NUMBER() OVER (PARTITION BY estudiante_id ORDER BY fecha_prediccion DESC) as rn
+            FROM predicciones
+        ) p ON e.id = p.estudiante_id AND p.rn = 1
+        ORDER BY e.fecha_registro DESC
+        LIMIT ? OFFSET ?
+    """, (por_pagina, offset))
+    rows = cursor.fetchall()
+    conn.close()
+    return [dict(row) for row in rows], total
+
+
+def get_estudiante_detallado(estudiante_id: int) -> dict | None:
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT * FROM estudiantes WHERE id = ?", (estudiante_id,))
+    row = cursor.fetchone()
+    if not row:
+        conn.close()
+        return None
+
+    estudiante = dict(row)
+
+    cursor.execute("""
+        SELECT id, probabilidad_riesgo, nivel_riesgo, desertó, fecha_prediccion
+        FROM predicciones
+        WHERE estudiante_id = ?
+        ORDER BY fecha_prediccion DESC
+    """, (estudiante_id,))
+    predicciones = [dict(r) for r in cursor.fetchall()]
+
+    conn.close()
+
+    estudiante["predicciones"] = predicciones
+    return estudiante
+
+
 def crear_estudiante(data: dict) -> int:
     conn = get_connection()
     cursor = conn.cursor()
 
     cursor.execute("""
         INSERT INTO estudiantes (
-            sexo, edad, promedio_general, promedio_admision,
+            correo, nombres, apellidos, sexo, edad, promedio_general, promedio_admision,
             horas_tutoria, ingreso_mensual, materias_repetidas,
             ratio_aprobacion_sem1, ratio_aprobacion_sem2,
             trabaja, apoyo_familiar, responsabilidades_familiares,
             becado, matricula_al_dia, deudor, desplazado, tipo_vivienda
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     """, (
+        data.get("correo", ""), data.get("nombres", ""), data.get("apellidos", ""),
         data["sexo"], data["edad"], data["promedio_general"],
         data.get("promedio_admision", 7.0), data["horas_tutoria"],
         data["ingreso_mensual"], data["materias_repetidas"],

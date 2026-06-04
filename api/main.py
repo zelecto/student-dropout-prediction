@@ -5,6 +5,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from api.routes import health_router, prediction_router, dashboard_router
+from api.routes.estudiantes import router as estudiantes_router
 from api.routes.Admon import router as admon_router
 from api.routes.Login import router as login_router
 from api.routes.StudentFeatures import router as student_router
@@ -44,6 +45,7 @@ def create_app() -> FastAPI:
 
     app.include_router(health_router)
     app.include_router(prediction_router)
+    app.include_router(estudiantes_router)
     app.include_router(student_router)
     app.include_router(dashboard_router)
     app.include_router(admon_router)
