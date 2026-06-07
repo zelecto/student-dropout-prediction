@@ -34,9 +34,15 @@ def create_app() -> FastAPI:
         lifespan=lifespan,
     )
 
+    origins = [
+    "http://localhost:8000", # local
+    #"http://tu-web-alb-dns-comercial-o-aws.amazonaws.com", # URL de tu balanceador de Front
+    "*",
+    ]
+
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"],
+        allow_origins=origins,
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
