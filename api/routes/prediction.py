@@ -8,6 +8,7 @@ from src.config import FEATURE_COLS
 from src.database import (
     buscar_estudiante_por_correo,
     crear_estudiante_completo,
+    crear_estudiante,
     guardar_prediccion,
     init_db,
 )
@@ -110,7 +111,7 @@ async def predict_batch(
     predictions = []
     for i, proba in enumerate(probas):
         data = batch.students[i].model_dump()
-        estudiante_id = crear_estudiante_completo(data)
+        estudiante_id = crear_estudiante(data)  # tolera correo/nombres/apellidos opcionales
 
         pred = int(proba >= threshold)
         nivel = clasificar_riesgo(proba)
