@@ -81,6 +81,9 @@ class Admon (BaseModel):
     Apellido: str = Field(description="Apellido del administrador")
 
 class StudentFeatures(BaseModel):
+    correo: str | None = None
+    nombres: str | None = None
+    apellidos: str | None = None
     edad: int = Field(ge=0, description="Edad del estudiante")
     sexo: str = Field(description="Sexo (M/F)")
     promedio_general: float = Field(ge=0)
