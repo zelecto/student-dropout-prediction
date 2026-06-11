@@ -43,6 +43,19 @@ def clasificar_riesgo(probabilidad: float) -> str:
     return "Alto"
 
 
+def ajustar_probabilidad(data: dict, proba: float) -> float:
+    promedio = data.get("promedio_general", 0) or 0
+    ingreso = data.get("ingreso_mensual", 0) or 0
+    ratio_sem1 = data.get("ratio_aprobacion_sem1", 0) or 0
+    ratio_sem2 = data.get("ratio_aprobacion_sem2", 0) or 0
+    ratio_prom = (ratio_sem1 + ratio_sem2) / 2
+
+    if promedio >= 15 and ingreso >= 1000000 and ratio_prom >= 0.85:
+        ajuste = 0.35
+        return round(proba * ajuste, 4)
+    return proba
+
+
 def predecir_estudiante(
     modelo, datos: pd.DataFrame, threshold: float = 0.5, detallado: bool = True
 ) -> pd.DataFrame:

@@ -22,7 +22,7 @@ from src.schemas import (
     RegistroPredictResponse,
     EstudianteResponse,
 )
-from src.predict import clasificar_riesgo
+from src.predict import clasificar_riesgo, ajustar_probabilidad
 
 router = APIRouter(prefix="/api/v1", tags=["Predicción"])
 
@@ -47,6 +47,7 @@ async def register_and_predict(data: RegistroPredictRequest):
 
     df = pd.DataFrame([data.model_dump()])
     proba = modelo.predict_proba(df[FEATURE_COLS])[:, 1][0]
+    proba = ajustar_probabilidad(data.model_dump(), proba)
     pred = int(proba >= threshold)
     nivel = clasificar_riesgo(proba)
 
@@ -83,6 +84,7 @@ async def predict_single(
 
     df = pd.DataFrame([data])
     proba = modelo.predict_proba(df[FEATURE_COLS])[:, 1][0]
+    proba = ajustar_probabilidad(data, proba)
     pred = int(proba >= threshold)
     nivel = clasificar_riesgo(proba)
 
@@ -113,6 +115,7 @@ async def predict_batch(
         data = batch.students[i].model_dump()
         estudiante_id = crear_estudiante(data)  # tolera correo/nombres/apellidos opcionales
 
+        proba = ajustar_probabilidad(data, proba)
         pred = int(proba >= threshold)
         nivel = clasificar_riesgo(proba)
 
